@@ -1,6 +1,7 @@
 import { generateToken } from "../lib/authToken.js";
 import { User } from "../models/User.model.js";
 import bcrypt from "bcryptjs";
+import { v2 as cloudinary } from "cloudinary";
 export const signup = async (req, res) => {
   // Model 에 맞게 정보 받고
   // auth 맞는 경우 Token 발행해주기
@@ -96,10 +97,24 @@ export const checkAuth = (req, res) => {
 export const profileUpdate = async (req, res) => {
   try {
     const currentUserID = req.user._id;
-    const user = await User.findById(currentUserID);
-
-  } catch (error) {}
+    const { profilePic } = req.body;
+    if (profilePic) {
+      const response = await cloudinary.uploader.upload(profilePic);
+      var imageURL = response.secure_url;
+    }
+    const updateProfile = await User.findByIdAndUpdate(
+      currentUserID,
+      {
+        profilePic: imageURL,
+      },
+      { new: true }
+    ).select("-password");
+    return res
+      .status(201)
+      .json({ success: true, updateProfile: updateProfile });
+  } catch (error) {
+    console.error("ERRPR FPOM profileUpdate Function", error.message);
+  }
 };
-
 
 // 설명 : 11:30 ProFileUpdate funciton 만들던 도중 뇌 뽀재짐 // put이랑 cloudinary 합쳐서 profile image update 해주고 나서 프론트개발 시작해야함
